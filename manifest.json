@@ -1,0 +1,9 @@
+{
+  "domain": "wsjson",
+  "name": "Weather Station JSON",
+  "version": "1.0.0",
+  "documentation": "https://github.com/mancontr/wsjson",
+  "codeowners": [],
+  "dependencies": ["http", "recorder"],
+  "iot_class": "local_polling"
+}
