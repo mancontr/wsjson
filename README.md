@@ -27,6 +27,12 @@ wsjson:
     - humidity
     - wind_speed
     - precipitation_rate
+
+    # Optional: today's tides from an IHM port (Spain).
+    tides:
+      station_id: "<IHM port id>"
+      # Optional: mean spring range at that port, in metres. Estimated if omitted.
+      spring_range: <metres>
 ```
 
 ## Setup

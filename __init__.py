@@ -13,12 +13,16 @@ from .const import (
     CONF_HISTORY,
     CONF_HISTORY_HOURS,
     CONF_HISTORY_TTL,
+    CONF_SPRING_RANGE,
+    CONF_STATION_ID,
+    CONF_TIDES,
     CONF_URL_PATH,
     DEFAULT_HISTORY_HOURS,
     DEFAULT_HISTORY_TTL,
     DEFAULT_URL_PATH,
     DOMAIN,
 )
+from .tides import TideTable
 from .view import WeatherStationView
 
 
@@ -54,6 +58,18 @@ CONFIG_SCHEMA = vol.Schema(
                         CONF_HISTORY_TTL, default=DEFAULT_HISTORY_TTL
                     ): cv.positive_int,
                     vol.Optional(CONF_URL_PATH, default=DEFAULT_URL_PATH): cv.string,
+                    # IHM port to take tide predictions from. Omit for no tides.
+                    vol.Optional(CONF_TIDES): vol.Schema(
+                        {
+                            vol.Required(CONF_STATION_ID): cv.string,
+                            # Mean spring range at that port, in metres: the
+                            # yardstick for the rough tide coefficient.
+                            # Estimated from the cached predictions if omitted.
+                            vol.Optional(CONF_SPRING_RANGE): vol.All(
+                                vol.Coerce(float), vol.Range(min=0, min_included=False)
+                            ),
+                        }
+                    ),
                 }
             ),
             _validate_history_keys,
@@ -64,8 +80,17 @@ CONFIG_SCHEMA = vol.Schema(
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Register the public view. No entities, no config flow, no state."""
+    """Register the public view. No entities, no config flow."""
     conf = config[DOMAIN]
+
+    tides = None
+    if tides_conf := conf.get(CONF_TIDES):
+        tides = TideTable(
+            hass,
+            station_id=tides_conf[CONF_STATION_ID],
+            spring_range=tides_conf.get(CONF_SPRING_RANGE),
+        )
+        await tides.async_start()
 
     hass.http.register_view(
         WeatherStationView(
@@ -75,6 +100,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             history_keys=conf[CONF_HISTORY],
             history_hours=conf[CONF_HISTORY_HOURS],
             history_ttl=conf[CONF_HISTORY_TTL],
+            tides=tides,
         )
     )
     return True

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from functools import partial
 from typing import Any
 
@@ -16,7 +16,9 @@ from homeassistant.components.recorder.statistics import statistics_during_perio
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
+from .astro import moon_phase, sun_times
 from .const import UNAVAILABLE_STATES
+from .tides import TideTable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +39,7 @@ class WeatherStationView(HomeAssistantView):
         history_keys: list[str],
         history_hours: int,
         history_ttl: int,
+        tides: TideTable | None,
     ) -> None:
         self.hass = hass
         self.url = url_path
@@ -52,6 +55,10 @@ class WeatherStationView(HomeAssistantView):
         self._history_cached_at: datetime | None = None
         self._lock = asyncio.Lock()
 
+        self._tides = tides
+        # Sun times only change with the local date.
+        self._sun_cache: tuple[date, dict[str, Any]] | None = None
+
     # ------------------------------------------------------------------
     # Request handling
     # ------------------------------------------------------------------
@@ -64,6 +71,9 @@ class WeatherStationView(HomeAssistantView):
             "history_from": (now - timedelta(hours=self._history_hours)).isoformat(),
             "current": self._current_values(),
             "history": await self._cached_history(now),
+            "sun": self._sun_today(now),
+            "moon": moon_phase(now),
+            "tide": self._tides.today(now) if self._tides else None,
         }
 
         return web.json_response(
@@ -96,6 +106,12 @@ class WeatherStationView(HomeAssistantView):
             }
 
         return out
+
+    def _sun_today(self, now: datetime) -> dict[str, Any]:
+        today = dt_util.as_local(now).date()
+        if self._sun_cache is None or self._sun_cache[0] != today:
+            self._sun_cache = (today, sun_times(self.hass, today))
+        return self._sun_cache[1]
 
     # ------------------------------------------------------------------
     # History: expensive, so cached behind a TTL and a lock.
