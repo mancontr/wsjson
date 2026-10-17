@@ -9,7 +9,7 @@ You need something like this at your `configuration.yaml`:
 
 ```yaml
 wsjson:
-    entities:
+  entities:
     temperature: sensor.gw2000a_outdoor_temperature
     dewpoint: sensor.gw2000a_dewpoint
     humidity: sensor.gw2000a_humidity
@@ -22,19 +22,26 @@ wsjson:
     uv: sensor.gw2000a_uv_index
     solar_radiation: sensor.gw2000a_solar_radiation
 
-    history:
+  history:
     - temperature
     - humidity
     - wind_speed
     - precipitation_rate
 
-    # Optional: today's tides from an IHM port (Spain).
-    tides:
-      station_id: "<IHM port id>"
-      # Optional: mean spring range at that port, in metres. Estimated if omitted.
-      spring_range: <metres>
+  # Optional: today's tides from an IHM port (Spain).
+  tides:
+    station_id: "<IHM port id>"
+    # Optional: mean spring range at that port, in metres. Estimated if omitted.
+    spring_range: <metres>
 ```
 
 ## Setup
 
-Just put this repo's folder at `config/custom_components`.
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mancontr&repository=wsjson&category=integration)
+
+1. Click the button above, or in HACS open the ⋮ menu → **Custom repositories**
+   and add `https://github.com/mancontr/wsjson` as an **Integration**.
+2. Download **Weather Station JSON** in HACS.
+3. Add the config above to your `configuration.yaml` and restart Home Assistant.
+
+To install manually instead, put this repo's folder at `config/custom_components/wsjson`.
