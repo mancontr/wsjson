@@ -15,7 +15,6 @@ from .const import (
     CONF_TIDES,
     DOMAIN,
     ENTITY_KEYS,
-    SERIES_KEYS,
 )
 from .daily import DailyArchive
 from .tides import TideTable
@@ -26,10 +25,19 @@ CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
             {
-                # Maps each published JSON key -> an entity_id. The keys
-                # are fixed; include the ones your station has.
+                # Maps each published JSON key -> its sensor, or a list of
+                # them in order of preference (the next one fills in whenever
+                # the previous has no data). The keys are fixed; include the
+                # ones your station has.
                 vol.Required(CONF_ENTITIES): vol.All(
-                    vol.Schema({vol.Optional(k): cv.entity_id for k in ENTITY_KEYS}),
+                    vol.Schema(
+                        {
+                            vol.Optional(k): vol.All(
+                                cv.ensure_list, [cv.entity_id], vol.Length(min=1)
+                            )
+                            for k in ENTITY_KEYS
+                        }
+                    ),
                     vol.Length(min=1),
                 ),
                 # IHM port to take tide predictions from. Omit for no tides.
@@ -65,14 +73,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         await tides.async_start()
 
     entities = conf[CONF_ENTITIES]
-    # Everything with a meaningful min/mean/max gets history and daily data.
-    series_entities = {k: v for k, v in entities.items() if k in SERIES_KEYS}
 
-    archive = DailyArchive(hass, entities=series_entities)
+    archive = DailyArchive(hass, entities=entities)
     await archive.async_start()
 
     hass.http.register_view(CurrentView(hass, entities=entities, tides=tides))
-    hass.http.register_view(HistoryView(hass, entities=series_entities))
+    hass.http.register_view(HistoryView(hass, entities=entities))
     hass.http.register_view(DailyIndexView(archive))
     hass.http.register_view(DailyYearView(archive))
     return True

@@ -30,9 +30,22 @@ wsjson:
 ```
 
 The keys under `entities` are fixed (the ones above); include the ones your
-station has. Every key except `wind_bearing` also gets history and daily
-summaries, taken from Home Assistant's statistics, so those sensors need a
-`state_class`.
+station has. A key can also take a list of sensors, e.g. two rain gauges:
+
+```yaml
+    precipitation_today:
+      - sensor.rain_gauge_daily_rain
+      - sensor.gw2000a_daily_rain_piezo
+```
+
+For rain (or any other counter), each day uses whichever sensor measured the
+most that day, so one that fails (offline, clogged or stuck) is covered by the
+other. For anything else, the first sensor with data is used.
+
+Every key also gets history and daily summaries, taken from Home Assistant's
+statistics, so those sensors need a `state_class`. For `wind_bearing` it must
+be `measurement_angle`, so that directions are averaged as angles; otherwise
+it is left out of both.
 
 ## Endpoints
 
@@ -64,6 +77,11 @@ and one array per field, one value per bucket, `null` where there is no data.
 - Measurements get `min`, `mean` and `max`. Counters (`total_increasing`
   sensors, typically rain) get `change` instead: the amount accumulated in that
   bucket.
+- `wind_bearing` gets only `mean`, averaged as an angle. In the yearly files
+  it also gets a daily wind rose: `sectors`, the hours the wind blew from each
+  of 16 sectors (22.5° each, the first centred on north, then clockwise), and
+  `calm`, the hours with mean wind under 1 km/h. Add them up over any range of
+  days for a rose of that period.
 
 The daily archive is built from Home Assistant's hourly statistics, which are
 never purged. On first start it backfills as far back as they go; after that

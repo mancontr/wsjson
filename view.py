@@ -14,9 +14,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from .astro import moon_phase, sun_times
-from .const import BASE_PATH, UNAVAILABLE_STATES, iso_seconds
+from .const import BASE_PATH, iso_seconds
 from .daily import DailyArchive
-from .stats import async_fetch, to_columns
+from .stats import Sources, async_fetch, current_state, to_columns
 from .tides import TideTable
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class CurrentView(HomeAssistantView):
         self,
         hass: HomeAssistant,
         *,
-        entities: dict[str, str],
+        entities: Sources,
         tides: TideTable | None,
     ) -> None:
         self.hass = hass
@@ -82,10 +82,9 @@ class CurrentView(HomeAssistantView):
         out: dict[str, Any] = {}
         latest: datetime | None = None
 
-        for key, entity_id in self._entities.items():
-            state = self.hass.states.get(entity_id)
-
-            if state is None or state.state.lower() in UNAVAILABLE_STATES:
+        for key, sources in self._entities.items():
+            state = current_state(self.hass, sources)
+            if state is None:
                 out[key] = {"value": None, "unit": None}
                 continue
 
@@ -112,7 +111,7 @@ class HistoryView(HomeAssistantView):
     url = f"{BASE_PATH}/history.json"
     name = "api:wsjson:history"
 
-    def __init__(self, hass: HomeAssistant, *, entities: dict[str, str]) -> None:
+    def __init__(self, hass: HomeAssistant, *, entities: Sources) -> None:
         self.hass = hass
         self._entities = entities
 
@@ -180,7 +179,7 @@ class HistoryView(HomeAssistantView):
         }
 
     def _unit(self, key: str) -> str | None:
-        state = self.hass.states.get(self._entities[key])
+        state = current_state(self.hass, self._entities[key])
         return state.attributes.get("unit_of_measurement") if state else None
 
 

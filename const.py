@@ -27,9 +27,9 @@ ENTITY_KEYS = (
     "uv",
     "solar_radiation",
 )
-# Keys that also get history and daily summaries: all but wind_bearing, whose
-# min/mean/max are meaningless on a circle.
-SERIES_KEYS = tuple(k for k in ENTITY_KEYS if k != "wind_bearing")
+# Angles: only published when the recorder averages them as such (sensors
+# with state_class measurement_angle), which also leaves out min and max.
+ANGLE_KEYS = frozenset({"wind_bearing"})
 
 # States that should serialise as null rather than as a string.
 UNAVAILABLE_STATES = frozenset({"unknown", "unavailable", "none", ""})
