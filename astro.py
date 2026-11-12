@@ -10,6 +10,8 @@ from homeassistant.const import SUN_EVENT_SUNRISE, SUN_EVENT_SUNSET
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.sun import get_astral_event_date
 
+from .const import iso_seconds
+
 SYNODIC_MONTH_DAYS = 29.530588861
 REFERENCE_NEW_MOON = datetime(2000, 1, 6, 18, 14, tzinfo=timezone.utc)
 
@@ -34,8 +36,8 @@ def sun_times(hass: HomeAssistant, day: date) -> dict[str, Any]:
     sunset = get_astral_event_date(hass, SUN_EVENT_SUNSET, day)
 
     return {
-        "sunrise": sunrise.isoformat() if sunrise else None,
-        "sunset": sunset.isoformat() if sunset else None,
+        "sunrise": iso_seconds(sunrise) if sunrise else None,
+        "sunset": iso_seconds(sunset) if sunset else None,
         "day_length": (
             round((sunset - sunrise).total_seconds()) if sunrise and sunset else None
         ),

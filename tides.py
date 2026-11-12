@@ -23,7 +23,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import DOMAIN, iso_seconds
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class TideEvent:
     height: float
 
     def as_dict(self) -> dict[str, Any]:
-        return {"t": self.t.isoformat(), "type": self.type, "height": self.height}
+        return {"t": iso_seconds(self.t), "type": self.type, "height": self.height}
 
 
 class TideTable:
